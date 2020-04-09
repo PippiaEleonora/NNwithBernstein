@@ -1,4 +1,4 @@
-function [box,Btotal] = NN_boxApproximation(poly,W,bias,n_layer,n_neurons,x,Domain)
+function [box,Btotal] = NN_boxApproximation(poly,W,bias,n_layer,n_neurons,x,Domain,tol_box)
 % NN_BOXAPPROXIMATION - a box approximation of a neural network.
 %
 % box = NN_boxApproximation(poly,W,bias,n_layer,n_neurons,x,Domain) return
@@ -27,7 +27,6 @@ type = 'Garloff'; %'Ray_Nataraj'
 
 coeffP = fliplr(eval(coeffs(polyP(x),x,'All')));
 coeffQ = fliplr(eval(coeffs(polyQ(x),x,'All')));
-
 degP = length(coeffP)-1;
 degQ = length(coeffQ)-1;
 
@@ -43,9 +42,9 @@ coeffP = coeffP';
 coeffQ = coeffQ';
 
 box_curr = Domain;
-Btotal = cell(1,n_layer+1);
+Btotal = cell(1,n_layer+2);
 Btotal{1} = box_curr;
-for l=1:n_layer-1
+for l=1:n_layer
     b_matrix = ((box_curr(:,2)-box_curr(:,1)).*ones(size(box_curr,1)))';
     W_new = W{l,1}.*b_matrix;
     bias_new = W{l,1}*box_curr(:,1) + bias{l,1};
@@ -60,37 +59,114 @@ for l=1:n_layer-1
     box_new = zeros(n_neurons(l),2);
     
     for t=1:n_neurons(l)
-        if degQ>0
-            if sign(box_update(t,1))*sign(box_update(t,2))<0
-                bcoeffP1 = BernsteinCoeff_1D(coeffP,degTOT,[box_update(t,1), 0],type);
-                bcoeffQ1 = BernsteinCoeff_1D(coeffQ,degTOT,[box_update(t,1), 0],type);
-                bcoeffP2 = BernsteinCoeff_1D(coeffP,degTOT,[0, box_update(t,2)],type);
-                bcoeffQ2 = BernsteinCoeff_1D(coeffQ,degTOT,[0, box_update(t,2)],type);
+        if ~isempty(tol_box)
+            if tol_box(1)>box_update(t,1) && tol_box(2)<box_update(t,2)
+                box_new(t,1) = -1;
+                box_new(t,2) = 1;
+            elseif tol_box(1)>box_update(t,1) && tol_box(2)>=box_update(t,2)
+                box_temp = [tol_box(1), box_update(t,2)];
+                    if degQ>0
+                        if sign(box_temp(1))*sign(box_temp(2))<0
+                            bcoeffP1 = BernsteinCoeff_1D(coeffP,degTOT,[box_temp(1), 0],type);
+                            bcoeffQ1 = BernsteinCoeff_1D(coeffQ,degTOT,[box_temp(1), 0],type);
+                            bcoeffP2 = BernsteinCoeff_1D(coeffP,degTOT,[0, box_temp(2)],type);
+                            bcoeffQ2 = BernsteinCoeff_1D(coeffQ,degTOT,[0, box_temp(2)],type);
 
-                bcoeffP = [bcoeffP1; bcoeffP2];
-                bcoeffQ = [bcoeffQ1; bcoeffQ2];
+                            bcoeffP = [bcoeffP1; bcoeffP2];
+                            bcoeffQ = [bcoeffQ1; bcoeffQ2];
 
+                        else
+                            bcoeffP = BernsteinCoeff_1D(coeffP,degTOT,box_temp(:),type);
+                            bcoeffQ = BernsteinCoeff_1D(coeffQ,degTOT,box_temp(:),type);
+                        end
+                        assert(sign(min(bcoeffQ))*sign(max(bcoeffQ))>0)
+                        bcoeff = bcoeffP./bcoeffQ;
+                    else
+                        bcoeff = BernsteinCoeff_1D(coeffP,degTOT,box_temp(:),type)./coeffQ(1);
+                    end
+                box_new(t,1) = -1;
+                box_new(t,2) = min(max(max(bcoeff),-1),1);
+            elseif tol_box(1)<=box_update(t,1) && tol_box(2)<box_update(t,2)
+                box_temp = [box_update(t,1),tol_box(2)];
+                    if degQ>0
+                        if sign(box_temp(1))*sign(box_temp(2))<0
+                            bcoeffP1 = BernsteinCoeff_1D(coeffP,degTOT,[box_temp(1), 0],type);
+                            bcoeffQ1 = BernsteinCoeff_1D(coeffQ,degTOT,[box_temp(1), 0],type);
+                            bcoeffP2 = BernsteinCoeff_1D(coeffP,degTOT,[0, box_temp(2)],type);
+                            bcoeffQ2 = BernsteinCoeff_1D(coeffQ,degTOT,[0, box_temp(2)],type);
+
+                            bcoeffP = [bcoeffP1; bcoeffP2];
+                            bcoeffQ = [bcoeffQ1; bcoeffQ2];
+
+                        else
+                            bcoeffP = BernsteinCoeff_1D(coeffP,degTOT,box_temp(:),type);
+                            bcoeffQ = BernsteinCoeff_1D(coeffQ,degTOT,box_temp(:),type);
+                        end
+                        assert(sign(min(bcoeffQ))*sign(max(bcoeffQ))>0)
+                        bcoeff = bcoeffP./bcoeffQ;
+                    else
+                        bcoeff = BernsteinCoeff_1D(coeffP,degTOT,box_temp(:),type)./coeffQ(1);
+                    end
+                box_new(t,1) = max(min(min(bcoeff),1),-1);
+                box_new(t,2) = 1;
             else
-                bcoeffP = BernsteinCoeff_1D(coeffP,degTOT,box_update(t,:),type);
-                bcoeffQ = BernsteinCoeff_1D(coeffQ,degTOT,box_update(t,:),type);
+                box_temp = box_update(t,:);
+                    if degQ>0
+                        if sign(box_temp(1))*sign(box_temp(2))<0
+                            bcoeffP1 = BernsteinCoeff_1D(coeffP,degTOT,[box_temp(1), 0],type);
+                            bcoeffQ1 = BernsteinCoeff_1D(coeffQ,degTOT,[box_temp(1), 0],type);
+                            bcoeffP2 = BernsteinCoeff_1D(coeffP,degTOT,[0, box_temp(2)],type);
+                            bcoeffQ2 = BernsteinCoeff_1D(coeffQ,degTOT,[0, box_temp(2)],type);
+
+                            bcoeffP = [bcoeffP1; bcoeffP2];
+                            bcoeffQ = [bcoeffQ1; bcoeffQ2];
+
+                        else
+                            bcoeffP = BernsteinCoeff_1D(coeffP,degTOT,box_temp(:),type);
+                            bcoeffQ = BernsteinCoeff_1D(coeffQ,degTOT,box_temp(:),type);
+                        end
+                        assert(sign(min(bcoeffQ))*sign(max(bcoeffQ))>0)
+                        bcoeff = bcoeffP./bcoeffQ;
+                    else
+                        bcoeff = BernsteinCoeff_1D(coeffP,degTOT,box_temp(:),type)./coeffQ(1);
+                    end
+                box_new(t,1) = max(min(min(bcoeff),1),-1);
+                box_new(t,2) = min(max(max(bcoeff),-1),1);
             end
-            assert(sign(min(bcoeffQ))*sign(max(bcoeffQ))>0)
-            bcoeff = bcoeffP./bcoeffQ;
         else
-            bcoeff = BernsteinCoeff_1D(coeffP,degTOT,box_update(t,:),type);
+            box_temp = box_update(t,:);
+                if degQ>0
+                    if sign(box_temp(1))*sign(box_temp(2))<0
+                        bcoeffP1 = BernsteinCoeff_1D(coeffP,degTOT,[box_temp(1), 0],type);
+                        bcoeffQ1 = BernsteinCoeff_1D(coeffQ,degTOT,[box_temp(1), 0],type);
+                        bcoeffP2 = BernsteinCoeff_1D(coeffP,degTOT,[0, box_temp(2)],type);
+                        bcoeffQ2 = BernsteinCoeff_1D(coeffQ,degTOT,[0, box_temp(2)],type);
+
+                        bcoeffP = [bcoeffP1; bcoeffP2];
+                        bcoeffQ = [bcoeffQ1; bcoeffQ2];
+
+                    else
+                        bcoeffP = BernsteinCoeff_1D(coeffP,degTOT,box_temp(:),type);
+                        bcoeffQ = BernsteinCoeff_1D(coeffQ,degTOT,box_temp(:),type);
+                    end
+                    assert(sign(min(bcoeffQ))*sign(max(bcoeffQ))>0)
+                    bcoeff = bcoeffP./bcoeffQ;
+                else
+                    bcoeff = BernsteinCoeff_1D(coeffP,degTOT,box_temp(:),type)./coeffQ(1);
+                end
+            box_new(t,1) = max(min(min(bcoeff),1),-1);
+            box_new(t,2) = min(max(max(bcoeff),-1),1);
         end
 
-        box_new(t,1) = max(min(bcoeff),-1);
-        box_new(t,2) = min(max(bcoeff),1);
         
     end
     box_curr = box_new;
     Btotal{l+1} = box_curr;  
 end
 
-b_matrix = ((box_curr(:,2)-box_curr(:,1)).*ones(size(box_curr,1), n_neurons(n_layer)))';
-W_new = W{n_layer,1}.*b_matrix;
-bias_new = W{n_layer,1}*box_curr(:,1) + bias{n_layer,1}';
+b_matrix = ((box_curr(:,2)-box_curr(:,1)).*ones(size(box_curr,1), n_neurons(n_layer+1)))';
+W_new = W{n_layer+1,1}.*b_matrix;
+bias_new = W{n_layer+1,1}*box_curr(:,1) + bias{n_layer+1,1}';
 
 valpos = W_new;
 valneg = valpos;
@@ -101,7 +177,7 @@ valneg(valneg>0)=0;
 
 box_curr = [sum(valneg,2)+bias_new, sum(valpos,2)+bias_new];
         
-Btotal{n_layer+1} = box_curr;
+Btotal{n_layer+2} = box_curr;
 box = box_curr;
 end
 

@@ -22,7 +22,9 @@ function [bcoeff,v] = GeneralizedBernsteinCoeff_nD(coeff,deg,ID)
 %   Bernstein coefficients but also the corresponding input variables, so
 %   the control points. It holds that p(x) C= convhull(v,bcoeff)
 %
-maxdeg = sum(deg);
+
+
+maxdeg = max(deg);
 n = length(deg);
 
 P = eye(maxdeg+1);
@@ -62,7 +64,9 @@ for i=1:deg(1)+1
         while ~prod(ID(j,:)==ID_new(current,:))
             current = current + 1;
         end
-        C(i,current) = coeff(i,j)/multinchoosek(maxdeg,[i-1 ID(j,:) maxdeg-i+1-sum(ID(j,:))]);
+        if maxdeg-i+1-sum(ID(j,:))>=0
+            C(i,current) = coeff(i,j)/multinchoosek(maxdeg,[i-1 ID(j,:) maxdeg-i+1-sum(ID(j,:))]);
+        end
     end
 end
 
