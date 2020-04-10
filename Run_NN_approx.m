@@ -7,7 +7,7 @@ Domain = [-1 7];
 inputs = rand(1,100)*(Domain(2)-Domain(1))+Domain(1);
 targets = exp(inputs);
 
-n_neurons = [3 3]; %number of neurons per layer
+n_neurons = [3 2]; %number of neurons per layer
 n_layer = length(n_neurons); %number of hidden layers
 
 OUT.lb = min(targets);
@@ -88,17 +88,21 @@ end
 
 toc
 
-%%
-Domain_new = (Domain-IN.lb).*2./(IN.ub-IN.lb) -1;
-[D.A,D.b,D.Aeq,D.beq]=vert2lcon(Domain_new');
-x=sym('x',[1,max([n_neurons,size(Domain,1),1])]); %WARNING: too much, maybe 
-                                                % we create different vectors 
-                                                % for each layer
-tic
-[polytope_old] = NN_polyApproximation(poly,Iconfid,W,bias,n_layer,[n_neurons 1],x,D);
-toc
-
-polytope = (polytope_old.b+1).*(OUT.ub-OUT.lb)./2 + OUT.lb;
+%% Polytope approximation
+% Function to convert vertex into linear constraints and viceversa do not
+% work correctly
+%
+% 
+% Domain_new = (Domain-IN.lb).*2./(IN.ub-IN.lb) -1;
+% [D.A,D.b,D.Aeq,D.beq]=vert2lcon(Domain_new');
+% x=sym('x',[1,max([n_neurons,size(Domain,1),1])]); %WARNING: too much, maybe 
+%                                                 % we create different vectors 
+%                                                 % for each layer
+% tic
+% [polytope_old] = NN_polyApproximation(poly,Iconfid,W,bias,n_layer,[n_neurons 1],x,D);
+% toc
+% 
+% polytope = (polytope_old.b+1).*(OUT.ub-OUT.lb)./2 + OUT.lb;
 %%
 if size(Domain,1)==1
     xx = linspace(Domain_new(1), Domain_new(2), 100);

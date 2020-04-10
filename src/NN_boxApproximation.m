@@ -25,8 +25,8 @@ function [box,Btotal] = NN_boxApproximation(poly,W,bias,n_layer,n_neurons,x,Doma
 type = 'Garloff'; %'Ray_Nataraj'
 [polyP,polyQ] = numden(poly);
 
-coeffP = fliplr(eval(coeffs(polyP(x),x,'All')));
-coeffQ = fliplr(eval(coeffs(polyQ(x),x,'All')));
+coeffP = fliplr(double(coeffs(polyP(x),x,'All')));
+coeffQ = fliplr(double(coeffs(polyQ(x),x,'All')));
 degP = length(coeffP)-1;
 degQ = length(coeffQ)-1;
 
@@ -45,7 +45,7 @@ box_curr = Domain;
 Btotal = cell(1,n_layer+2);
 Btotal{1} = box_curr;
 for l=1:n_layer
-    b_matrix = ((box_curr(:,2)-box_curr(:,1)).*ones(size(box_curr,1)))';
+    b_matrix = ((box_curr(:,2)-box_curr(:,1)).*ones(size(box_curr,1), n_neurons(l)))';
     W_new = W{l,1}.*b_matrix;
     bias_new = W{l,1}*box_curr(:,1) + bias{l,1};
 
