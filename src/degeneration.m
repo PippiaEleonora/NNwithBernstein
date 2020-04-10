@@ -1,6 +1,16 @@
-function [V_new,Project] = degeneration(A,b,Aeq,beq)
+function [V_new,Project] = degeneration(type,P)
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
+switch type
+    case 'vert'
+    [A,b,Aeq,beq] = vert2lcon(P);
+    case 'lcon'
+        A = P.A;
+        b = P.b;
+        Aeq = P.Aeq;
+        bqe = P.beq;
+end
+    
 if isempty(Aeq) ||  isempty(A)
     V_new = lcon2vert(A,b,Aeq,beq);
     Project.A = [];
