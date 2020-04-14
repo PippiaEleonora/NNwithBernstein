@@ -93,16 +93,16 @@ toc
 % work correctly
 %
 % 
-% Domain_new = (Domain-IN.lb).*2./(IN.ub-IN.lb) -1;
-% [D.A,D.b,D.Aeq,D.beq]=vert2lcon(Domain_new');
-% x=sym('x',[1,max([n_neurons,size(Domain,1),1])]); %WARNING: too much, maybe 
-%                                                 % we create different vectors 
-%                                                 % for each layer
-% tic
-% [polytope_old] = NN_polyApproximation(poly,Iconfid,W,bias,n_layer,[n_neurons 1],x,D);
-% toc
-% 
-% polytope = (polytope_old.b+1).*(OUT.ub-OUT.lb)./2 + OUT.lb;
+Domain_new = (Domain-IN.lb).*2./(IN.ub-IN.lb) -1;
+[D.A,D.b,D.Aeq,D.beq]=vert2lcon(Domain_new');
+x=sym('x',[1,max([n_neurons,size(Domain,1),1])]); %WARNING: too much, maybe 
+                                                % we create different vectors 
+                                                % for each layer
+tic
+[polytope_old] = NN_polyApproximation(poly,x,[],Iconfid,W,bias,n_layer,[n_neurons 1],D);
+toc
+
+polytope = (polytope_old.b+1).*(OUT.ub-OUT.lb)./2 + OUT.lb;
 %%
 if size(Domain,1)==1
     xx = linspace(Domain_new(1), Domain_new(2), 100);

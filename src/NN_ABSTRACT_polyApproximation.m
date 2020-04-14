@@ -12,9 +12,13 @@ poly_curr = Domain;
 %
 for l=1:n_layer
     N = size(poly_curr.A,2);
+    poly_new.A = [];
+    poly_new.b = [];
+    poly_new.Aeq = [];
+    poly_new.beq = [];
     for t=1:n_neurons(l)
         if N==1
-            asset(size(poly_curr.A,1)==N+1)
+            assert(size(poly_curr.A,1)==N+1)
             assert(sign(poly_curr.A(1)*poly_curr.A(2))<0)
             
             interval = poly_curr.b./poly_curr.A;
@@ -47,26 +51,27 @@ for l=1:n_layer
             
             halfspacePlus.A =  -W{l,1}(t,:);
             halfspacePlus.b = bias{l,1}(t)-Iconfident(2);
-            Pplus = lcon2vert([polytope_curr.A; halfspacePlus.A], [polytope_curr.b; halfspacePlus.b]); 
+            Pplus = lcon2vert([poly_curr.A; halfspacePlus.A], [poly_curr.b; halfspacePlus.b]); 
             if ~isempty(Pplus)
                 poly_temp = [poly_temp; Pplus ones(size(Pplus,1),1)];
             end
             
             halfspaceMinus.A =  W{l,1}(t,:);
             halfspaceMinus.b = -bias{l,1}(t)+Iconfident(1);
-            Pminus = lcon2vert([polytope_curr.A; halfspaceMinus.A],[polytope_curr.b; halfspaceMinus.b]);
+            Pminus = lcon2vert([poly_curr.A; halfspaceMinus.A],[poly_curr.b; halfspaceMinus.b]);
             if ~isempty(Pminus)
                 poly_temp = [poly_temp; Pminus -ones(size(Pminus,1),1)];
             end
             
             verticalspace.A = [W{l,1}(t,:); -W{l,1}(t,:)];
             verticalspace.b = [-bias{l,1}(t)+Iconfident(2); bias{l,1}(t)-Iconfident(1)];
-            P = lcon2vert([polytope_curr.A; verticalspace.A], [polytope_curr.b; verticalspace.b]);
+            P = lcon2vert([poly_curr.A; verticalspace.A], [poly_curr.b; verticalspace.b]);
             
             if ~isempty(P)
                 [P_new,Projection] = degeneration('vert',P); % 1 CASE TBI
                 if size(P_new,1)==1 % single point
-                    % DO SOMETHING
+                    point = [Projection.A*P_new+Projection.b , P_new];
+                    poly_temp = [point, evaluation(poly, precision(l,t), W{l,1}(t,:)*point'+ bias{l,1}(t))]; %TBI
                 else
                     [indexTR,n_triangle,polytope_new] = My_Triangulation(P_new); 
                     for k=1:n_triangle
@@ -92,11 +97,11 @@ for l=1:n_layer
                                     v =[v v_cell{idx}'];  
                                 end
                             end
-                            v = (V*v'+b)';
+                            v = (V*v'+a)';
                             v = [(Projection.A*v'+Projection.b)' v];
                         else
                             Matrix = W{l,1}(t,:)*V;
-                            vector = W{l,1}(t,:)*b+bias{l,1}(t);
+                            vector = W{l,1}(t,:)*a+bias{l,1}(t);
                             coeff = coefficients(poly, precision(l,t), Matrix, vector); % TBI
                             deg = (size(coeff,1)-1)*ones(1,N);
                             [bcoeff,v_cell] = GeneralizedBernsteinCoeff_nD(coeff,deg,[]);
@@ -105,7 +110,7 @@ for l=1:n_layer
                             for idx=1:N
                                 v =[v v_cell{idx}'];  
                             end
-                            v = (V*v'+b)';
+                            v = (V*v'+a)';
                         end
                         poly_temp = [poly_temp; v bcoeff];
                     end
@@ -129,18 +134,75 @@ for l=1:n_layer
     V_new = lcon2vert(poly_new.A,poly_new.b,poly_new.Aeq,poly_new.beq);
     V_new = V_new(:,N+1:end);
     if size(V_new,2)<2
-        polytope_curr.A = [1 -1];
-        polytope_curr.b = [max(V_new), min(V_new)];
-        polytope_curr.Aeq = [];
-        polytope_curr.beq = [];
+        poly_curr.A = [1 -1];
+        poly_curr.b = [max(V_new), min(V_new)];
+        poly_curr.Aeq = [];
+        poly_curr.beq = [];
     else
-        [polytope_curr.A,polytope_curr.b,polytope_curr.Aeq,polytope_curr.beq] = vert2lcon(V_new);
+        [poly_curr.A,poly_curr.b,poly_curr.Aeq,poly_curr.beq] = vert2lcon(V_new);
     end
 end
 
+N = size(poly_curr.A,2);
+l = n_layer+1;
+if N==1
+    asset(size(poly_curr.A,1)==N+1)
+    assert(sign(poly_curr.A(1)*poly_curr.A(2))<0)
 
-% LAST STEP
+    interval = poly_curr.b./poly_curr.A;    
+    if interval(1)>interval(2)
+        interval = [interval(2) interval(1)];
+    end
+    poly_temp = [interval(1) (W{l,1}*interval(1) + bias{l,1}(t))';...
+                interval(1) (W{l,1}*interval(1) + bias{l,1}(t))'];
+else
+    poly_temp = [];
+    P = lcon2vert(poly_curr.A, poly_curr.b, poly_curr.Aeq, poly_curr.beq);
+    if ~isempty(P)
+        [P_new,Project] = degeneration('vert',P); % 1 CASE TBI
+        if size(P_new,1)==1 % single point
+            if ~isempty(Project.A)
+                point = [Project.A*P_new+Project.b , P_new];
+            else
+                point = P_new;
+            end
+            poly_temp = [point*ones(n_neurons(l),1), W{l,1}*point'+ bias{l,1}];
+        else
+            [indexTR,n_triangle,polytope_new] = My_Triangulation(P_new); 
+            for k=1:n_triangle
+                vertex = polytope_new(indexTR(k,:),:)';
+                V = vertex(:,2:end)-vertex(:,1);
+                a = vertex(:,1);
+                m = size(vertex,2);
+                W_new = W{l,1}*V;
+                bias_new = W{l,1}*a + bias{l,1};
 
-
+                bcoeff = zeros(n_neurons(l), m);
+                bcoeff(:,1) = bias_new;
+                for idx = 2:m
+                    bcoeff(:,idx) = W_new*[zeros(idx-2,1); 1; zeros(m-idx,1)] + bias_new;
+                end
+                bcoeff = bcoeff';
+                if ~isempty(Project.A)
+                    project_vertex = Project.A*vertex'+Project.b;
+                    v = [project_vertex vertex'];
+                else
+                    v = vertex';
+                end
+                poly_temp = [poly_temp;v bcoeff];
+            end
+        end
+    end
+end
+V_new = poly_temp(:,N+1:end);
+if size(V_new,2)<2
+    poly_curr.A = [1 -1];
+    poly_curr.b = [max(V_new), min(V_new)];
+    poly_curr.Aeq = [];
+    poly_curr.beq = [];
+else
+    [poly_curr.A,poly_curr.b,poly_curr.Aeq,poly_curr.beq] = vert2lcon(V_new);
+end
+polytope = poly_curr;
 end
 
