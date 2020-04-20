@@ -8,7 +8,7 @@ switch type
         A = P.A;
         b = P.b;
         Aeq = P.Aeq;
-        bqe = P.beq;
+        beq = P.beq;
 end
     
 if isempty(Aeq) ||  isempty(A)
@@ -18,6 +18,7 @@ if isempty(Aeq) ||  isempty(A)
 % elseif isempty(A) %single point
 %     V = lcon2vert(P.lcon{:})
 else %is degenerate
+    m1 = size(Aeq,1);
     Aeq_1 = Aeq(:,1:m1);
     Aeq_2 = Aeq(:,m1+1:end);
 

@@ -4,6 +4,7 @@ function net = createNN(inputs,targets,n_neurons)
 %
 % This function returns the neural network 'net' 
 %
+%%
 hiddenLayerSize = n_neurons;
 hiddenLayerNumber = 1;
 
@@ -14,11 +15,11 @@ end
 net.divideFcn = 'divideind';
 
 % Set up Division of Data for Training, Validation, Testing
-net.divideParam.trainInd = 1:2:length(inputs);
-net.divideParam.valInd = 2:4:length(inputs);
-net.divideParam.testInd = 4:4:length(inputs);
+net.divideParam.trainInd = 1:2:size(inputs,2);
+net.divideParam.valInd = 2:4:size(inputs,2);
+net.divideParam.testInd = 4:4:size(inputs,2);
 
-% Train the Network
+%% Train the Network
 [net] = train(net,inputs,targets);
 
 % Test the Network

@@ -63,6 +63,10 @@ for l=1:n_layer
             if tol_box(1)>box_update(t,1) && tol_box(2)<box_update(t,2)
                 box_new(t,1) = -1;
                 box_new(t,2) = 1;
+            elseif tol_box(1)>box_update(t,2)
+                box_new(t,:) = [-1 -1];
+            elseif tol_box(2)<box_update(t,1)
+                box_new(t,:) = [1 1];
             elseif tol_box(1)>box_update(t,1) && tol_box(2)>=box_update(t,2)
                 box_temp = [tol_box(1), box_update(t,2)];
                     if degQ>0

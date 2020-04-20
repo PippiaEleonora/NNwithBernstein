@@ -10,9 +10,11 @@ poly_curr = Domain;
 %       poly_curr.Aeq*x = poly_curr.beq
 %   
 %
+epsilon = 10^-6;
+ifplot = 0;
 coeffP = fliplr(double(coeffs(poly(x(1)),x(1),'All')));
 for l=1:n_layer
-        if l==2
+        if l==2  && ifplot
         v_domain = lcon2vert(Domain.A,Domain.b,Domain.Aeq,Domain.beq);
         xx = linspace(min(v_domain),max(v_domain(2)),100);
         figure
@@ -66,28 +68,32 @@ for l=1:n_layer
             poly_temp = [];
             
             halfspacePlus.A =  -W{l,1}(t,:);
-            halfspacePlus.b = bias{l,1}(t)-Iconfident(2);
-            Pplus = lcon2vert([poly_curr.A; halfspacePlus.A], [poly_curr.b; halfspacePlus.b]); 
+            halfspacePlus.b = bias{l,1}(t)-(Iconfident(2)+epsilon);
+            Pplus = lcon2vert([poly_curr.A; halfspacePlus.A], [poly_curr.b; halfspacePlus.b], poly_curr.Aeq, poly_curr.beq); 
             if ~isempty(Pplus)
                 poly_temp = [poly_temp; Pplus ones(size(Pplus,1),1)];
             end
             
             halfspaceMinus.A =  W{l,1}(t,:);
-            halfspaceMinus.b = -bias{l,1}(t)+Iconfident(1);
-            Pminus = lcon2vert([poly_curr.A; halfspaceMinus.A],[poly_curr.b; halfspaceMinus.b]);
+            halfspaceMinus.b = -bias{l,1}(t)+(Iconfident(1)-epsilon);
+            Pminus = lcon2vert([poly_curr.A; halfspaceMinus.A],[poly_curr.b; halfspaceMinus.b], poly_curr.Aeq, poly_curr.beq);
             if ~isempty(Pminus)
                 poly_temp = [poly_temp; Pminus -ones(size(Pminus,1),1)];
             end
             
             verticalspace.A = [W{l,1}(t,:); -W{l,1}(t,:)];
             verticalspace.b = [-bias{l,1}(t)+Iconfident(2); bias{l,1}(t)-Iconfident(1)];
-            P = lcon2vert([poly_curr.A; verticalspace.A], [poly_curr.b; verticalspace.b]);
+            P = lcon2vert([poly_curr.A; verticalspace.A], [poly_curr.b; verticalspace.b], poly_curr.Aeq, poly_curr.beq);
             
             if ~isempty(P)
                 [P_new,Projection] = degeneration('vert',P); % 1 CASE TBI
                 if size(P_new,1)==1 % single point
-                    point = [Projection.A*P_new+Projection.b , P_new];
-                    poly_temp = [point, double(poly(W{l,1}(t,:)*point'+ bias{l,1}(t)))];
+                    if  isempty(Projection.A)
+                        point = P_new;
+                    else
+                        point = [Projection.A*P_new+Projection.b , P_new];
+                    end
+                    poly_temp = [point, max(min(double(poly(W{l,1}(t,:)*point'+ bias{l,1}(t))),1),-1)];
                 else
                     [indexTR,n_triangle,polytope_new] = My_Triangulation(P_new); 
                     for k=1:n_triangle
@@ -103,10 +109,13 @@ for l=1:n_layer
                             
                             coeff = multiCoeff(Matrix, vector,coeffP);
 %                             coeff = coefficients(poly, precision(l,t), Matrix, vector); % TBI
-                            deg = (size(coeff,1)-1)*ones(1,m);
+                            
                             if m==1
+                                deg = length(coeff)-1;
                                 [bcoeff,v] = BernsteinCoeff_1D(coeff,deg,[0 1],'Garloff');
+                                v = v';
                             else
+                                deg = (size(coeff,1)-1)*ones(1,m);
                                 [bcoeff,v_cell] = GeneralizedBernsteinCoeff_nD(coeff,deg,[]);
                                 bcoeff = bcoeff';
                                 v = [];
@@ -135,7 +144,7 @@ for l=1:n_layer
                 end
             end
         end
-        if l==1
+        if l==1 && ifplot
             v_domain = lcon2vert(Domain.A,Domain.b,Domain.Aeq,Domain.beq);
             xx = linspace(min(v_domain),max(v_domain(2)),100);
             figure
@@ -147,6 +156,13 @@ for l=1:n_layer
         end
         %% FROM HERE IT'S WRONG, SHOLD BE AN OR NOT AN AND!!!
         [A,b,Aeq,beq] = vert2lcon(poly_temp);
+%         vert1 = poly_temp;
+%         vert2 = lcon2vert(A,b,Aeq,beq);
+%         while size(vert1,1)~=size(vert2,1)
+%             vert1 = vert2;
+%             [A,b,Aeq,beq] = vert2lcon(vert1);
+%             vert2 = lcon2vert(A,b,Aeq,beq);
+%         end
         if ~isempty(A)
             n1 = size(A,1);
             A = [A(:,1:N) zeros(n1,t-1) A(:,N+1) zeros(n1,n_neurons(l)-t)];
@@ -160,6 +176,9 @@ for l=1:n_layer
         poly_new.Aeq = [poly_new.Aeq;Aeq];
         poly_new.beq = [poly_new.beq;beq];
     end
+%     a = reduce_rows([poly_new.A -poly_new.b]);
+%     [A,b] = fourmotz(poly_new.A,poly_new.b,n_neurons(l));
+%     V_new = lcon2vert(A,b,[],[]);
     V_new = lcon2vert(poly_new.A,poly_new.b,poly_new.Aeq,poly_new.beq);
     V_new = V_new(:,N+1:end);
     if size(V_new,2)<2
@@ -169,20 +188,26 @@ for l=1:n_layer
         poly_curr.beq = [];
     else
         [poly_curr.A,poly_curr.b,poly_curr.Aeq,poly_curr.beq] = vert2lcon(V_new);
+        % just to try
+        try_poly = intersectionHull('lcon',poly_curr.A,poly_curr.b,poly_curr.Aeq,poly_curr.beq, 'lcon', [eye(n_neurons(l)); -eye(n_neurons(l))], ones(2*n_neurons(l),1));
+        poly_curr.A = try_poly.lcon{1};
+        poly_curr.b = try_poly.lcon{2};
+        poly_curr.Aeq = try_poly.lcon{3};
+        poly_curr.beq = try_poly.lcon{4};
     end
 end
-
-v_domain = lcon2vert(poly_old.A,poly_old.b,poly_old.Aeq,poly_old.beq);
-figure
-y1_old = y1;
-y1 = tansig(W{l-1,1}(1,:)*[y1,y2,y3]'+bias{l-1,1}(1));
-y2 = tansig(W{l-1,1}(2,:)*[y1_old,y2,y3]'+bias{l-1,1}(2));
-ver_new = lcon2vert(poly_curr.A,poly_curr.b,poly_curr.Aeq,poly_curr.beq);
-conv = convhull(ver_new);
-figure
-plot(y1,y2)
-hold on
-plot(ver_new(conv,1),ver_new(conv,2))
+if ifplot
+    v_domain = lcon2vert(poly_old.A,poly_old.b,poly_old.Aeq,poly_old.beq);
+    y1_old = y1;
+    y1 = tansig(W{l-1,1}(1,:)*[y1,y2,y3]'+bias{l-1,1}(1));
+    y2 = tansig(W{l-1,1}(2,:)*[y1_old,y2,y3]'+bias{l-1,1}(2));
+    ver_new = lcon2vert(poly_curr.A,poly_curr.b,poly_curr.Aeq,poly_curr.beq);
+    conv = convhull(ver_new);
+    figure
+    plot(y1,y2)
+    hold on
+    plot(ver_new(conv,1),ver_new(conv,2))
+end
 
 N = size(poly_curr.A,2);
 l = n_layer+1;

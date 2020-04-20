@@ -15,6 +15,13 @@ if N>1
             end
         end
     end
+else
+    coeff = 0.*C;
+    for d=0:deg
+        for alpha=d:deg
+            coeff(d+1) = coeff(d+1) + C(alpha+1)*nchoosek(alpha,d)*A^d*b^(alpha-d);
+        end
+    end
 end
 end
 
