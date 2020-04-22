@@ -189,11 +189,12 @@ for l=1:n_layer
     else
         [poly_curr.A,poly_curr.b,poly_curr.Aeq,poly_curr.beq] = vert2lcon(V_new);
         % just to try
-        try_poly = intersectionHull('lcon',poly_curr.A,poly_curr.b,poly_curr.Aeq,poly_curr.beq, 'lcon', [eye(n_neurons(l)); -eye(n_neurons(l))], ones(2*n_neurons(l),1));
-        poly_curr.A = try_poly.lcon{1};
-        poly_curr.b = try_poly.lcon{2};
-        poly_curr.Aeq = try_poly.lcon{3};
-        poly_curr.beq = try_poly.lcon{4};
+%         try_poly = intersectionHull('lcon',poly_curr.A,poly_curr.b,poly_curr.Aeq,poly_curr.beq, 'lcon', [eye(n_neurons(l)); -eye(n_neurons(l))], ones(2*n_neurons(l),1));
+%         poly_curr.A = try_poly.lcon{1};
+%         poly_curr.b = try_poly.lcon{2};
+%         poly_curr.Aeq = try_poly.lcon{3};
+%         poly_curr.beq = try_poly.lcon{4};
+        
     end
 end
 if ifplot
