@@ -1,14 +1,14 @@
 function [box,Btotal] = NN_boxApproximation(poly,W,bias,n_layer,n_neurons,x,Domain,tol_box)
 % NN_BOXAPPROXIMATION - a box approximation of a neural network.
 %
-% box = NN_boxApproximation(poly,W,bias,n_layer,n_neurons,x,Domain) return
-% an hyper-rectangular domanin box (NX2) with N the number of output.
+% box = NN_boxApproximation(poly,W,bias,n_layer,n_neurons,x,Domain,tol_box) 
+% return an hyper-rectangular domanin box (NX2) with N the number of output.
 %
 %       Input description:
 %       - poly: is the polynomial or rational approximation of the 
 %               activation function 
 %       - W: is a cell structure (mX1) with the weight matrix for each layer
-%       - b: is a cell structure (mX1) with the bias vector for each layer
+%       - bias: is a cell structure (mX1) with the bias vector for each layer
 %       - n_layer: is the number of layers (hidden layers + output layer)
 %       - n_neurons: is a vector with the number of neurons for each layer
 %                   (again hidden layers + output layer)
@@ -20,9 +20,9 @@ function [box,Btotal] = NN_boxApproximation(poly,W,bias,n_layer,n_neurons,x,Doma
 %                 consider the poly expression inside tol_box and outside 
 %                 we consider constantly -1 or 1.
 %
-% [box,Btotal] = NN_boxApproximation(poly,W,bias,n_layer,n_neurons,x,Domain) 
-% return the hyper-rectangular domain 'box' and return also a cell structure 
-% with the hyper-rectangular approximation for each layer
+% [box,Btotal] = NN_boxApproximation(poly,W,bias,n_layer,n_neurons,x,Domain,
+% tol_box) return the hyper-rectangular domain 'box' and return also a cell  
+% structure with the hyper-rectangular approximation for each layer
 %
 %
 % Comments inside the code are referring to the document:
