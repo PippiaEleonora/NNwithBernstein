@@ -1,3 +1,9 @@
 src/.DS_Store
 .DS_Store
 src/Berstein_coeff/GeneralizedBernsteinCoeff_nD_slow.m
+COMP_GEOM_TLBX/
+Figure/
+bad_design_NN/
+fourmotz/
+tbxmanager/
+

@@ -42,21 +42,19 @@ for l=1:n_layer
     b_matrix = ((box_curr(:,2)-box_curr(:,1)).*ones(size(box_curr,1), n_neurons(l)))';
     W_new = W{l,1}.*b_matrix;
     bias_new = W{l,1}*box_curr(:,1) + bias{l,1};
-
     
     % Computation of the bounds according to equation (42)
     valpos = W_new;
     valneg = valpos;
     valpos(valpos<0)=0;
     valneg(valneg>0)=0;
-    box_update = [sum(valneg,2)+bias_new, sum(valpos,2)+bias_new]; 
     % box_update is the bound for the variable y, so the domain of the
     % activation function
-     
+    box_update = [sum(valneg,2)+bias_new, sum(valpos,2)+bias_new]; 
+    
     % SECOND STEP (z=tanh(y)) 
-    % box_curr is the overapproximation obtained with Bernstein, is a matrix
-    % nX2 with n=number of neurons. The output z_i = tanh(y) is inside the 
-    % interval z_i \in [box_new(i,1), box_new(i,2)]
+    % The output z_i = tanh(y) is inside the interval 
+    % z_i \in [box_curr(i,1), box_curr(i,2)]
     box_curr = tansig(box_update);
     Btotal{l+1} = box_curr;  
 end

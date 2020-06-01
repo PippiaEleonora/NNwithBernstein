@@ -17,7 +17,8 @@ Open your terminal, navigate to your desired directory and write:
         startup
         ```
 
-The code is written in MATLAB and it makes use of Symbolic Toolbox. No special installation is required. 
+The code is written in MATLAB and it makes use of Symbolic Toolbox. It uses also Multi-Parametric Toolbox 3.
+[url](https://www.mpt3.org/Main/HomePage)
 
 The folder src/polytopes_2018_10_04_v1 contains the functions of Matt J., please visit his page on
 [FileExchange](https://www.mathworks.com/matlabcentral/fileexchange/30892-analyze-n-dimensional-polyhedra-in-terms-of-vertices-or-in-equalities)
