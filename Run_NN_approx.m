@@ -4,9 +4,9 @@ clc
 
 
 %% Load an existing NN
-load('test/exp23')
+% load('test/exp23')
 % load('test/exp')
-% load('test/cubic')
+load('test/cubic')
 % load('test/foxholes1_17042020')
 
 % load('test/NN_bad_design')
@@ -59,10 +59,11 @@ ifconfidence = 0;
 %% Box Overapproximation
 tic
 Domain_new = (Domain-IN.lb).*2./(IN.ub-IN.lb) -1;
-z = sym('z');
-[box_old, B] = NN_boxApproximation(poly,W,bias,n_layer,n_neurons,z,Domain_new, Iconfid);
-box1 = (box_old+1).*(OUT.ub-OUT.lb)./2 + OUT.lb
-lunghezza1 = box1(2)-box1(1)
+x=sym('x',[1,max([n_neurons,size(Domain,1),1])]); %WARNING: too much, maybe 
+                                                % we create different vectors 
+                                                % for each layer
+box_old = NN_boxApprox(poly,[],W,bias,n_layer,n_neurons,Domain_new,x);
+box1 = (box_old+1).*(OUT.ub-OUT.lb)./2 + OUT.lb;
 toc
 
 
@@ -70,7 +71,7 @@ toc
 tic
 Domain_new = (Domain-IN.lb).*2./(IN.ub-IN.lb) -1;
 [box_old] = NN_nopoly_boxApprox(W,bias,n_layer,n_neurons,Domain_new);
-box = (box_old+1).*(OUT.ub-OUT.lb)./2 + OUT.lb;
+box2 = (box_old+1).*(OUT.ub-OUT.lb)./2 + OUT.lb;
 toc
 
 
@@ -93,35 +94,35 @@ end
 box_split = box_cur;
 toc
 
-%% Polytope approximation
-% Function to convert vertex into linear constraints and viceversa do not
-% work correctly
-%
-% 
-Domain_new = (Domain-IN.lb).*2./(IN.ub-IN.lb) -1;
-for i=1:size(Domain_new,1)
-    if Domain_new(i,1)>Domain_new(i,2)
-        temp = Domain_new(i,1);
-        Domain_new(i,1) = Domain_new(i,2);
-        Domain_new(i,2) = temp;
-    end
-end
-A = [eye(size(Domain_new,1)); -eye(size(Domain_new,1))];
-b = [Domain_new(:,2); -Domain_new(:,1)];
-% D.Aeq = [];
-% D.beq = [];
-x=sym('x',[1,max([n_neurons,size(Domain,1),1])]); %WARNING: too much, maybe 
-                                                % we create different vectors 
-                                                % for each layer
+% %% Polytope approximation
+% % Function to convert vertex into linear constraints and viceversa do not
+% % work correctly
+% %
+% % 
+% Domain_new = (Domain-IN.lb).*2./(IN.ub-IN.lb) -1;
+% for i=1:size(Domain_new,1)
+%     if Domain_new(i,1)>Domain_new(i,2)
+%         temp = Domain_new(i,1);
+%         Domain_new(i,1) = Domain_new(i,2);
+%         Domain_new(i,2) = temp;
+%     end
+% end
+% A = [eye(size(Domain_new,1)); -eye(size(Domain_new,1))];
+% b = [Domain_new(:,2); -Domain_new(:,1)];
+% % D.Aeq = [];
+% % D.beq = [];
+% x=sym('x',[1,max([n_neurons,size(Domain,1),1])]); %WARNING: too much, maybe 
+%                                                 % we create different vectors 
+%                                                 % for each layer
+% % tic
+% % [polytope_old] = NN_polyApproximation(poly,x,[],Iconfid,W,bias,n_layer,[n_neurons 1],D);
+% % toc
+% D = Polyhedron(A,b);
 % tic
-% [polytope_old] = NN_polyApproximation(poly,x,[],Iconfid,W,bias,n_layer,[n_neurons 1],D);
+% [polytope_old] = NN_polyApprox(poly,[],Iconfid,W,bias,n_layer,[n_neurons 1],D,x);
 % toc
-D = Polyhedron(A,b);
-tic
-[polytope_old] = NN_polyApprox(poly,[],Iconfid,W,bias,n_layer,[n_neurons 1],D,x);
-toc
-
-polytope = (polytope_old.b+1).*(OUT.ub-OUT.lb)./2 + OUT.lb;
+% 
+% polytope = (polytope_old.b+1).*(OUT.ub-OUT.lb)./2 + OUT.lb;
  
 
 %% Plot results for single input
@@ -143,19 +144,26 @@ if size(Domain,1)==1
     
     clear vector_legend p
     figure
-    p(1)=plot(linspace(Domain(1), Domain(2), 100), net(linspace(Domain(1), Domain(2))), 'black','LineWidth',4);
+    p(1)=plot(linspace(Domain(1), Domain(2), 100), net(linspace(Domain(1), Domain(2))), 'black','LineWidth',2);
     hold on
-    p(2)=plot(linspace(Domain(1), Domain(2), 100), xx, 'r','LineWidth',1);
+    p(2)=plot(linspace(Domain(1), Domain(2), 100), xx, '--r','LineWidth',2);
     vector_legend{1} = 'Neural Network';
     vector_legend{2} = 'Approximation';
     
     cur = 1;
-    if exist('box','var')
+    if exist('box1','var')
         hold on
-        p(length(p)+1)=plot(linspace(Domain(1), Domain(2), 100), box(1)*ones(1,100), 'blue','LineWidth',2);
+        p(length(p)+1)=plot(linspace(Domain(1), Domain(2), 100), box1(1)*ones(1,100), 'blue','LineWidth',2);
         hold on
-        plot(linspace(Domain(1), Domain(2), 100), box(2)*ones(1,100), 'blue','LineWidth',2)
-        vector_legend{length(vector_legend)+1} = 'box approx';
+        plot(linspace(Domain(1), Domain(2), 100), box1(2)*ones(1,100), 'blue','LineWidth',2)
+        vector_legend{length(vector_legend)+1} = 'box approx with rational';
+    end
+    if exist('box2','var')
+        hold on
+        p(length(p)+1)=plot(linspace(Domain(1), Domain(2), 100), box2(1)*ones(1,100), '--green','LineWidth',2);
+        hold on
+        plot(linspace(Domain(1), Domain(2), 100), box2(2)*ones(1,100), '--green','LineWidth',2)
+        vector_legend{length(vector_legend)+1} = 'box approx without rational';
     end
     if exist('box_split','var')
         split = size(box_split,1);
