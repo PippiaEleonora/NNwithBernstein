@@ -115,8 +115,8 @@ for l=1:n_layer
                             Matrix = W{l,1}(t,:)*V;
                             vector = W{l,1}(t,:)*a+bias{l,1}(t);
                         end
-                        coeffP1 = multiCoeff(Matrix, vector,coeffP,'first');
-                        coeffQ1 = multiCoeff(Matrix, vector,coeffQ,'first');
+                        coeffP1 = multiCoeff(Matrix, vector,coeffP,'first'); % THAO
+                        coeffQ1 = multiCoeff(Matrix, vector,coeffQ,'first'); % THAO
                         if N==1
                             bcoeffP = BernsteinCoeff_1D(coeffP1,degTOT,[0 1],'Garloff');
                             bcoeffQ = BernsteinCoeff_1D(coeffQ1,degTOT,[0 1],'Garloff');
@@ -162,8 +162,8 @@ for l=1:n_layer
                             Matrix = W{l,1}(t,:)*V;
                             vector = W{l,1}(t,:)*a+bias{l,1}(t);
                         end
-                        coeffP1 = multiCoeff(Matrix, vector,coeffP,'first');
-                        coeffQ1 = multiCoeff(Matrix, vector,coeffQ,'first');
+                        coeffP1 = multiCoeff(Matrix, vector,coeffP,'first'); % THAO
+                        coeffQ1 = multiCoeff(Matrix, vector,coeffQ,'first'); % THAO
                         if N==1
                             bcoeffP = BernsteinCoeff_1D(coeffP1,degTOT,[0 1],'Garloff');
                             bcoeffQ = BernsteinCoeff_1D(coeffQ1,degTOT,[0 1],'Garloff');
@@ -178,8 +178,8 @@ for l=1:n_layer
                 end
             end
         elseif sign(interval_new(t,1))*sign(interval_new(t,2))<0 && N==1 
-            coeffP1 = multiCoeff(W{l,1}(t,:), bias{l,1}(t),coeffP,'last');
-            coeffQ1 = multiCoeff(W{l,1}(t,:), bias{l,1}(t),coeffQ,'last');
+            coeffP1 = multiCoeff(W{l,1}(t,:), bias{l,1}(t),coeffP,'last'); % THAO
+            coeffQ1 = multiCoeff(W{l,1}(t,:), bias{l,1}(t),coeffQ,'last'); % THAO
             
             bcoeffP = BernsteinCoeff_1D(coeffP1,degTOT,[box_curr(1,1),0],type);
             bcoeffQ = BernsteinCoeff_1D(coeffQ1,degTOT,[box_curr(1,1),0],type);
@@ -189,8 +189,8 @@ for l=1:n_layer
             bcoeffQ = BernsteinCoeff_1D(coeffQ1,degTOT,[0, box_curr(1,2)],type);
             bcoeff = [bcoeff; bcoeffP./bcoeffQ];
         else
-            coeffP1 = multiCoeff(W{l,1}(t,:), bias{l,1}(t),coeffP,'last');
-            coeffQ1 = multiCoeff(W{l,1}(t,:), bias{l,1}(t),coeffQ,'last');
+            coeffP1 = multiCoeff(W{l,1}(t,:), bias{l,1}(t),coeffP,'last'); % THAO
+            coeffQ1 = multiCoeff(W{l,1}(t,:), bias{l,1}(t),coeffQ,'last'); % THAO
             if N==1
                 bcoeffP = BernsteinCoeff_1D(coeffP1,degTOT,box_curr,type);
                 bcoeffQ = BernsteinCoeff_1D(coeffQ1,degTOT,box_curr,type);
