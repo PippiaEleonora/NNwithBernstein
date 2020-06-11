@@ -4,7 +4,7 @@ clc
 
 
 %% Create NN or load an existing one
-ifload = 1;
+ifload = 0;
 if ifload
     load('test/exp23')
 %     load('test/NN_acceptable_design')
@@ -14,7 +14,7 @@ else
     targets = exp(inputs);
 %     targets = (inputs).^3;
 
-    n_neurons = [2 3]; %number of neurons per layer
+    n_neurons = [2 2]; %number of neurons per layer
     n_layer = length(n_neurons); %number of hidden layers
 
     net = createNN(inputs,targets,n_neurons); %neural network

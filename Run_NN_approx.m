@@ -4,12 +4,13 @@ clc
 
 
 %% Load an existing NN
+% load('test/exp22')
 % load('test/exp23')
-% load('test/exp')
-load('test/cubic')
+% load('test/exp32')
+% load('test/cubic')
 % load('test/foxholes1_17042020')
 
-% load('test/NN_bad_design')
+load('test/NN_bad_design')
 % load('test/NN_ok_design')
 
 
@@ -49,9 +50,9 @@ end
 answer = questdlg('Select type of approximation:','Type of approximate', ...
 	'Polynomial','Chebyshev','Rational','Polynomial');
 
-deg = [9 9];
+deg = [5 9];
 Iconfid = [-4 4];
-ifplot = 0;
+ifplot = 1;
 ifconfidence = 0;
 [poly,error] = createApprox(answer,deg,ifplot,Iconfid,ifconfidence);
 
@@ -70,7 +71,7 @@ toc
 %% Box Overapproximation (without Bernstein)
 tic
 Domain_new = (Domain-IN.lb).*2./(IN.ub-IN.lb) -1;
-[box_old] = NN_nopoly_boxApprox(W,bias,n_layer,n_neurons,Domain_new);
+[box_old,B] = NN_nopoly_boxApprox(W,bias,n_layer,n_neurons,Domain_new);
 box2 = (box_old+1).*(OUT.ub-OUT.lb)./2 + OUT.lb;
 toc
 
@@ -95,10 +96,10 @@ box_split = box_cur;
 toc
 
 % %% Polytope approximation
-% % Function to convert vertex into linear constraints and viceversa do not
-% % work correctly
-% %
-% % 
+% % % Function to convert vertex into linear constraints and viceversa do not
+% % % work correctly
+% % %
+% % % 
 % Domain_new = (Domain-IN.lb).*2./(IN.ub-IN.lb) -1;
 % for i=1:size(Domain_new,1)
 %     if Domain_new(i,1)>Domain_new(i,2)
@@ -109,17 +110,12 @@ toc
 % end
 % A = [eye(size(Domain_new,1)); -eye(size(Domain_new,1))];
 % b = [Domain_new(:,2); -Domain_new(:,1)];
-% % D.Aeq = [];
-% % D.beq = [];
 % x=sym('x',[1,max([n_neurons,size(Domain,1),1])]); %WARNING: too much, maybe 
 %                                                 % we create different vectors 
 %                                                 % for each layer
-% % tic
-% % [polytope_old] = NN_polyApproximation(poly,x,[],Iconfid,W,bias,n_layer,[n_neurons 1],D);
-% % toc
 % D = Polyhedron(A,b);
 % tic
-% [polytope_old] = NN_polyApprox(poly,[],Iconfid,W,bias,n_layer,[n_neurons 1],D,x);
+% [polytope_old] = NN_polyApprox(poly,[],Iconfid,W,bias,n_layer,n_neurons,D,x);
 % toc
 % 
 % polytope = (polytope_old.b+1).*(OUT.ub-OUT.lb)./2 + OUT.lb;
@@ -146,9 +142,9 @@ if size(Domain,1)==1
     figure
     p(1)=plot(linspace(Domain(1), Domain(2), 100), net(linspace(Domain(1), Domain(2))), 'black','LineWidth',2);
     hold on
-    p(2)=plot(linspace(Domain(1), Domain(2), 100), xx, '--r','LineWidth',2);
+    p(2)=plot(linspace(Domain(1), Domain(2), 100), xx, 'blue','LineWidth',2);
     vector_legend{1} = 'Neural Network';
-    vector_legend{2} = 'Approximation';
+    vector_legend{2} = 'Chebyshev Approximation';
     
     cur = 1;
     if exist('box1','var')
@@ -194,10 +190,8 @@ if size(Domain,1)==1
         hold on
         plot(linspace(Domain(1), Domain(2), 100), min(polytope)*ones(1,100), 'red--','LineWidth',2)
         hold on
-        plot(linspace(Domain(1), Domain(2), 100), max(polytope)*ones(1,100), 'red--','LineWidth',2)
-%         vector_legend{cur+1} = 'lower bound with polytope';
-%         vector_legend{cur+2} = 'upper bound with polytope';
-%         cur = cur+2;
+        p(length(p)+1) = plot(linspace(Domain(1), Domain(2), 100), max(polytope)*ones(1,100), 'red--','LineWidth',2);
+        vector_legend{length(vector_legend)+1} = 'polytope approximation';
     end
     legend(p(:),vector_legend)
 end

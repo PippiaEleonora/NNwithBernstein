@@ -45,11 +45,14 @@ end
 
 if ifplot
     xx = linspace(Iconfid(1),Iconfid(2),1000);
-    figure
+    fig = figure
     plot(xx,eval(poly(xx)),'LineWidth',1)
     hold on
     plot(xx,tansig(xx),'blue','LineWidth',2)
     legend('approx','tanh')
+%     set(gca,'FontSize',18)
+    legend('Location','southeast') 
+%     saveas(fig,'approxTanh.png')
 end
 
 if ifconfidence

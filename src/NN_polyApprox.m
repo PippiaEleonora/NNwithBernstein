@@ -30,6 +30,8 @@ function [polytope] = NN_polyApprox(poly,precision,Iconfident,W,bias,n_layer,n_n
 %                 define the convex domain
 %
 
+ifplot = 0;
+
 poly_curr = Domain;
 
 if isempty(precision)
@@ -161,6 +163,15 @@ for l=1:n_layer
         % z_i is the i-th neuron)
         % For each neuron we need to extract and collect the contraints
         polytope = Polyhedron('V',poly_temp);
+        if ifplot
+            if polytope.Dim<=3
+                f = figure;
+                hold on
+                polytope.plot('color',[0.5 0.5 0.5])
+                set(gca,'FontSize',18)
+                saveas(f,strcat('layer',num2str(l),num2str(t),'.png'))
+            end
+        end
         A = polytope.A;
         b = polytope.b;
         Aeq = polytope.Ae;
@@ -181,15 +192,21 @@ for l=1:n_layer
     % poly_new contain the relation between input-output at each layer, we
     % need to project away the input variables.
     if ~isempty(Aeq)
-        polytope = Polyhedron('A',poly_new.A,'b',poly_new.b,...
-                          'Ae',poly_new.Aeq,'be',poly_new.beq);
+        polytope_vert = lcon2vert(poly_new.A,poly_new.b,...
+                                  poly_new.Aeq,poly_new.beq);
+%         polytope = Polyhedron('A',poly_new.A,'b',poly_new.b,...
+%                           'Ae',poly_new.Aeq,'be',poly_new.beq);
     else
-        polytope = Polyhedron('A',poly_new.A,'b',poly_new.b);
+        polytope_vert = lcon2vert(poly_new.A,poly_new.b);
+%         polytope = Polyhedron('A',poly_new.A,'b',poly_new.b);
     end
     M = N+n_neurons(l);
-    poly_curr = polytope.projection([N+1:M],'mplp'); %THAO (this is heavy)
-    poly_curr = Polyhedron('A',poly_curr.A,'b',poly_curr.b,'Ae',poly_curr.Ae,...
-        'be',poly_curr.be,'lb',-ones(1,M-N),'ub',ones(1,M-N));
+%     poly_curr = polytope.projection([N+1:M],'mplp'); %THAO (this is heavy)
+%     poly_curr = Polyhedron('A',poly_curr.A,'b',poly_curr.b,'Ae',poly_curr.Ae,...
+%         'be',poly_curr.be,'lb',-ones(1,M-N),'ub',ones(1,M-N));
+    
+    polytope_vert_new = polytope_vert(:,N+1:M);
+    poly_curr = Polyhedron('V',polytope_vert_new);
 end
 
 N = size(poly_curr.A,2);
@@ -234,9 +251,13 @@ else
                     bcoeff(:,idx) = W_new*[zeros(idx-2,1); 1; zeros(m-idx,1)] + bias_new;
                 end
                 bcoeff = bcoeff';
-                if ~isempty(Project.A)
-                    project_vertex = Project.A*vertex'+Project.b;
-                    v = [project_vertex vertex'];
+                if ~isempty(Project)
+                    if ~isempty(Project.A)
+                        project_vertex = Project.A*vertex'+Project.b;
+                        v = [project_vertex vertex'];
+                    else
+                        v = vertex';
+                    end
                 else
                     v = vertex';
                 end
