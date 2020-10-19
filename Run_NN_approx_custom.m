@@ -87,7 +87,7 @@ toc
 %% Tentative
 tic
 Domain_new = (Domain-IN.lb).*2./(IN.ub-IN.lb) -1;
-[box_old, B2] = NN_nopoly_boxApprox(W,bias,n_layer,n_neurons,Domain_new);
+[box_old, B2] = NN_nopoly_boxApprox(W,bias,n_layer,n_neurons,Domain_new,1);
 box2 = (box_old+1).*(OUT.ub-OUT.lb)./2 + OUT.lb
 lunghezza1 = box2(2)-box2(1)
 toc

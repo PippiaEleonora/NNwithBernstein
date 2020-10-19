@@ -1,4 +1,4 @@
-function [box,Btotal] = NN_nopoly_boxApprox(W,bias,n_layer,n_neurons,Domain)
+function [box,Btotal] = NN_nopoly_boxApprox(W,bias,n_layer,n_neurons,Domain,extraFClayer)
 % NN_BOXAPPROXIMATION - a box approximation of a neural network.
 %
 % box = NN_boxApproximation(W,bias,n_layer,n_neurons,Domain) return
@@ -27,7 +27,11 @@ function [box,Btotal] = NN_nopoly_boxApprox(W,bias,n_layer,n_neurons,Domain)
 % box_curr is the current domain, at each layer
 % Btotal is an output and it saves the current domain
 box_curr = Domain;
-Btotal = cell(1,n_layer+2);
+if extraFClayer
+    Btotal = cell(1,n_layer+2);
+else
+    Btotal = cell(1,n_layer+1);
+end
 Btotal{1} = box_curr;
 
 % For-loop for the hidden layers
@@ -59,20 +63,22 @@ for l=1:n_layer
     Btotal{l+1} = box_curr;  
 end
 
-% LAST STEP: from the last hidden layer to the output we just have the
-% linear function y=Wx+bias
-b_matrix = ((box_curr(:,2)-box_curr(:,1)).*ones(size(box_curr,1), n_neurons(n_layer+1)))';
-W_new = W{n_layer+1,1}.*b_matrix;
-bias_new = W{n_layer+1,1}*box_curr(:,1) + bias{n_layer+1,1}';
+if extraFClayer
+    % LAST STEP: from the last hidden layer to the output we just have the
+    % linear function y=Wx+bias
+    b_matrix = ((box_curr(:,2)-box_curr(:,1)).*ones(size(box_curr,1), n_neurons(n_layer+1)))';
+    W_new = W{n_layer+1,1}.*b_matrix;
+    bias_new = W{n_layer+1,1}*box_curr(:,1) + bias{n_layer+1,1}';
 
-valpos = W_new;
-valneg = valpos;
-valpos(valpos<0)=0;
-valneg(valneg>0)=0;
+    valpos = W_new;
+    valneg = valpos;
+    valpos(valpos<0)=0;
+    valneg(valneg>0)=0;
 
-box_curr = [sum(valneg,2)+bias_new, sum(valpos,2)+bias_new];
-        
-Btotal{n_layer+2} = box_curr;
+    box_curr = [sum(valneg,2)+bias_new, sum(valpos,2)+bias_new];
+
+    Btotal{n_layer+2} = box_curr;
+end
 box = box_curr;
 end
 

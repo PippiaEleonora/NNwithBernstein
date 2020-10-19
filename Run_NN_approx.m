@@ -4,13 +4,13 @@ clc
 
 
 %% Load an existing NN
-% load('test/exp22')
+load('test/exp22')
 % load('test/exp23')
 % load('test/exp32')
 % load('test/cubic')
 % load('test/foxholes1_17042020')
 
-load('test/NN_bad_design')
+% load('test/NN_bad_design')
 % load('test/NN_ok_design')
 
 
@@ -50,7 +50,7 @@ end
 answer = questdlg('Select type of approximation:','Type of approximate', ...
 	'Polynomial','Chebyshev','Rational','Polynomial');
 
-deg = [5 9];
+deg = [4 4];
 Iconfid = [-4 4];
 ifplot = 1;
 ifconfidence = 0;
@@ -71,7 +71,7 @@ toc
 %% Box Overapproximation (without Bernstein)
 tic
 Domain_new = (Domain-IN.lb).*2./(IN.ub-IN.lb) -1;
-[box_old,B] = NN_nopoly_boxApprox(W,bias,n_layer,n_neurons,Domain_new);
+[box_old,B] = NN_nopoly_boxApprox(W,bias,n_layer,n_neurons,Domain_new,1);
 box2 = (box_old+1).*(OUT.ub-OUT.lb)./2 + OUT.lb;
 toc
 
